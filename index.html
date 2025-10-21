@@ -2,104 +2,63 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Offline Microwave Link Simulator (Phase A)</title>
-  <link rel="stylesheet" href="./assets/css/styles.css" />
-  <script src="./assets/js/app.js" defer></script>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Path Profile: Curvature, Fresnel Clearance & Plot</title>
+  <link rel="stylesheet" href="/assets/css/styles.css" />
+  <script defer src="/assets/js/vendor/miniplot.min.js"></script>
+  <script defer src="/assets/js/app.js"></script>
 </head>
 <body>
-  <header class="app-header">
-    <h1>Offline Microwave Link Simulator</h1>
-    <p class="subtitle">Phase A: Distance-based link budget (runs fully offline)</p>
-  </header>
+  <div class="container">
+    <h1>Path Profile Analyzer</h1>
 
-  <main class="container">
-    <section class="card">
-      <h2>Inputs</h2>
-      <p class="hint">Enter values and results will update automatically. Units are indicated per field.</p>
-      <div id="error-summary" class="error-summary" aria-live="polite" hidden></div>
-
-      <form id="link-form" novalidate>
-        <div class="grid">
-          <div class="field">
-            <label for="frequency">Frequency (GHz)</label>
-            <input id="frequency" name="frequency" type="number" inputmode="decimal" step="0.01" min="0.001" placeholder="e.g., 18" value="18" required />
-          </div>
-          <div class="field">
-            <label for="distance">Link distance (km)</label>
-            <input id="distance" name="distance" type="number" inputmode="decimal" step="0.01" min="0.001" placeholder="e.g., 10" value="10" required />
-          </div>
-          <div class="field">
-            <label for="txPower">Tx power (dBm)</label>
-            <input id="txPower" name="txPower" type="number" inputmode="decimal" step="0.1" placeholder="e.g., 20" value="20" />
-          </div>
-          <div class="field">
-            <label for="txGain">Tx antenna gain (dBi)</label>
-            <input id="txGain" name="txGain" type="number" inputmode="decimal" step="0.1" placeholder="e.g., 30" value="30" />
-          </div>
-          <div class="field">
-            <label for="rxGain">Rx antenna gain (dBi)</label>
-            <input id="rxGain" name="rxGain" type="number" inputmode="decimal" step="0.1" placeholder="e.g., 30" value="30" />
-          </div>
-          <div class="field">
-            <label for="txFeeder">Tx feeder loss (dB)</label>
-            <input id="txFeeder" name="txFeeder" type="number" inputmode="decimal" step="0.1" placeholder="e.g., 2" value="2" />
-          </div>
-          <div class="field">
-            <label for="rxFeeder">Rx feeder loss (dB)</label>
-            <input id="rxFeeder" name="rxFeeder" type="number" inputmode="decimal" step="0.1" placeholder="e.g., 2" value="2" />
-          </div>
-          <div class="field">
-            <label for="miscLosses">Misc losses (dB)</label>
-            <input id="miscLosses" name="miscLosses" type="number" inputmode="decimal" step="0.1" placeholder="e.g., 0" value="0" />
-          </div>
-          <div class="field">
-            <label for="rxThreshold">Rx threshold (dBm)</label>
-            <input id="rxThreshold" name="rxThreshold" type="number" inputmode="decimal" step="0.1" placeholder="e.g., -75" value="-75" />
-          </div>
+    <section class="controls">
+      <div class="control-group">
+        <label for="csvFile">Upload CSV (distance_m,elevation_m):</label>
+        <input type="file" id="csvFile" accept=".csv" />
+      </div>
+      <div class="row">
+        <div class="control-group">
+          <label for="freqGHz">Frequency (GHz)</label>
+          <input type="number" id="freqGHz" step="0.1" min="0.1" value="5.8" />
         </div>
-        <div class="actions">
-          <button type="submit" class="primary">Compute</button>
-          <button type="reset" class="secondary">Reset</button>
+        <div class="control-group">
+          <label for="kFactor">Effective Earth radius factor k</label>
+          <input type="number" id="kFactor" step="0.01" min="0.5" value="1.333" />
         </div>
-      </form>
-    </section>
-
-    <section class="card results">
-      <h2>Results</h2>
-      <div class="results-grid">
-        <div class="result">
-          <div class="label">FSPL</div>
-          <div class="value" id="fsplVal">—</div>
-          <div class="unit">dB</div>
+        <div class="control-group">
+          <label for="txH">TX antenna height (m)</label>
+          <input type="number" id="txH" step="0.1" min="0" value="10" />
         </div>
-        <div class="result">
-          <div class="label">EIRP</div>
-          <div class="value" id="eirpVal">—</div>
-          <div class="unit">dBm</div>
-        </div>
-        <div class="result">
-          <div class="label">Rx power at receiver</div>
-          <div class="value" id="rxPowerVal">—</div>
-          <div class="unit">dBm</div>
-        </div>
-        <div class="result">
-          <div class="label">Total additional losses</div>
-          <div class="value" id="addLossesVal">0.00</div>
-          <div class="unit">dB</div>
-        </div>
-        <div class="result highlight">
-          <div class="label">Fade margin</div>
-          <div class="value" id="fadeMarginVal">—</div>
-          <div class="unit">dB</div>
+        <div class="control-group">
+          <label for="rxH">RX antenna height (m)</label>
+          <input type="number" id="rxH" step="0.1" min="0" value="10" />
         </div>
       </div>
-      <p class="note">FSPL is computed using 92.45 + 20·log10(f[GHz]) + 20·log10(d[km]). Fade margin = Rx power − Rx threshold.</p>
+      <div class="row">
+        <button id="plotBtn">Compute & Plot</button>
+        <button id="resetBtn" class="secondary">Reset</button>
+      </div>
+      <p class="hint">CSV format: header distance_m,elevation_m; distances in meters, elevation in meters above mean sea level. Processing is 100% client-side; no network requests are made.</p>
     </section>
-  </main>
 
-  <footer class="app-footer">
-    <small>No external network calls. Save this page and open it locally to use offline.</small>
-  </footer>
+    <section class="results">
+      <div class="summary" id="summary"></div>
+    </section>
+
+    <section class="plot">
+      <div class="legend">
+        <span class="legend-item"><span class="swatch swatch-ground"></span> Ground + curvature</span>
+        <span class="legend-item"><span class="swatch swatch-los"></span> LOS</span>
+        <span class="legend-item"><span class="swatch swatch-fresnel"></span> 60% Fresnel envelope</span>
+        <span class="legend-item"><span class="swatch swatch-obstruct"></span> Obstructions</span>
+      </div>
+      <canvas id="plotCanvas" width="1000" height="520"></canvas>
+    </section>
+
+    <section class="footer">
+      <p>All compute and plotting run client-side. Vendor plotting lib: /assets/js/vendor/miniplot.min.js</p>
+    </section>
+  </div>
 </body>
 </html>
